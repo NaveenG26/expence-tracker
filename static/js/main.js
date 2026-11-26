@@ -1,1 +1,1 @@
-// main.js — students will add JavaScript here as features are built
+// main.js — vanilla JS for Spendly; add page interactions here as features are built

@@ -1,144 +1,116 @@
 ---
 name: frontend-design
-description: Designs and generates modern, production-ready UI for Spendly, a personal expense tracker built on Flask + Jinja2 + vanilla CSS (repo - https://github.com/campusx-official/spendly). Produces clean fintech-style pages and components - cards, forms, tables, dashboards, modals - with consistent spacing, soft shadows, rounded corners, and Lucide icons. Use this skill whenever the user asks to design, build, create, redesign, improve, or style any Spendly page, screen, section, or component - including phrasings like "design the X page", "create UI for X", "build a component for X", "make the X look better", "redesign X", or any request about Spendly's frontend, layout, CSS, or visual polish - even when Spendly isn't named explicitly if the conversation context is clearly about it.
+description: Designs and builds UI for Spendly, Naveen's personal expense tracker (repo - https://github.com/NaveenG26/expence-tracker), using Flask + Jinja2 + vanilla CSS + vanilla JS. Produces pages and components (cards, forms, tables, stat tiles, empty states) that match Spendly's existing warm-paper, ink-and-forest-green look by reusing the CSS variables and classes in static/css/style.css. Use when the user asks to design, build, create, redesign, improve, or style any Spendly page, screen, section, or component - e.g. "design the X page", "create UI for X", "make the X look better" - or any request about Spendly's templates, layout, CSS, or visual polish.
 disable-model-invocation: true
 ---
 
 # Spendly UI Designer
 
-You are designing frontend UI for **Spendly**, a personal expense tracker. Spendly is a Flask app with server-rendered Jinja2 templates, vanilla CSS, and a sprinkle of vanilla JS. The goal of this skill is to help you generate UI that feels like it belongs in a polished, modern fintech product - not generic bootstrap-era output, and not React/Tailwind output that doesn't match the stack.
+You are designing frontend UI for **Spendly**, a personal expense tracker built with Flask and SQLite. Pages are server-rendered Jinja2 templates styled with vanilla CSS, with small amounts of vanilla JS. Every new page must look like it belongs next to the existing landing, login and register pages: one coherent product, not a collage.
 
-## What Spendly's stack looks like
+`CLAUDE.md` is the source of truth for project rules. If anything here conflicts with it, `CLAUDE.md` wins.
 
-- **Backend:** Flask (`app.py`), SQLite or similar (`database/`)
-- **Templates:** Jinja2 in `templates/` (e.g. `base.html`, `dashboard.html`, `add_expense.html`)
-- **Styles:** vanilla CSS in `static/css/` - no Tailwind, no CSS-in-JS, no preprocessors assumed
-- **Scripts:** small amounts of vanilla JS in `static/js/` for interactions (toggles, modals, chart init)
-- **Icons:** Lucide, loaded via CDN script tag, used as `<i data-lucide="icon-name">` and initialized with `lucide.createIcons()`
+## The stack (fixed - do not change)
 
-Generate output that fits this stack. Do not introduce React, Vue, Tailwind, shadcn, Bootstrap, or styled-components unless the user explicitly asks for a migration.
+- **Routes:** `app.py` only, no blueprints. A route checks the session, calls helpers from `database/db.py`, and renders a template.
+- **Templates:** `templates/*.html`, one per page, each starting with `{% extends "base.html" %}`.
+- **Styles:** `static/css/style.css` holds the global styles and design tokens. Page-specific styles go in a **new file** (e.g. `static/css/profile.css`) loaded through `{% block head %}`. Never use inline `<style>` tags or `style=""` attributes.
+- **Scripts:** vanilla JS only, either in `static/js/main.js` or in a page file loaded through `{% block scripts %}`. Pages must work with JS turned off.
+- **No frameworks or packages:** no React, Vue, Tailwind, Bootstrap, jQuery, npm, or new pip packages.
 
-## Before you design: check what already exists
+## Before you design: read what exists
 
-If the user's project files are available (e.g. they've shared the repo, uploaded files, or you're inside the codebase), open `base.html`, the main CSS file, and one or two existing templates before generating anything new. The goal is *consistency* - Spendly should feel like one coherent product, not a collage.
+Open these before writing anything:
 
-Specifically, look for and reuse:
+1. `templates/base.html`: layout, navbar, footer, and the `title` / `head` / `content` / `scripts` blocks
+2. `static/css/style.css`: tokens (`:root`) and the existing component classes
+3. `templates/login.html` or `templates/register.html`: the reference for cards and forms
+4. The spec for the current step in `.claude/specs/`: which variables the template receives
 
-- **Color tokens** (CSS custom properties like `--color-primary`, `--color-bg`, `--color-surface`, etc.)
-- **Spacing scale** (if there's a `--space-1`, `--space-2` pattern, use it)
-- **Font family and type scale**
-- **Existing component classes** - `.card`, `.btn`, `.input`, `.badge`, `.table`, etc.
-- **The base layout** - sidebar? topbar? container width? Follow it.
+## Design tokens (from `style.css` - always use these)
 
-If you can't see the existing files and the request is non-trivial, ask the user to share a screenshot or paste a relevant template before you generate. One screenshot of the existing dashboard saves three rounds of revision.
+Never hardcode hex or rgb colours in new CSS. Always use `var(--token)`. If you truly need a new colour, add it as a token in `:root` in `style.css` and flag it to the user.
 
-## The Spendly design language
+| Purpose | Token |
+|---|---|
+| Primary text | `--ink` (near-black) |
+| Secondary text | `--ink-soft` |
+| Muted text, labels | `--ink-muted` |
+| Placeholders, faint hints | `--ink-faint` |
+| Page background | `--paper` (warm off-white) |
+| Alternate section background | `--paper-warm` |
+| Card surface | `--paper-card` (white) |
+| Primary accent (hover, focus, highlights) | `--accent` (forest green) / `--accent-light` |
+| Secondary accent (badges, second data series) | `--accent-2` (amber) / `--accent-2-light` |
+| Errors, destructive actions | `--danger` / `--danger-light` |
+| Borders and dividers | `--border` / `--border-soft` |
+| Headings, big numbers | `--font-display` (DM Serif Display) |
+| Body text, UI, tables | `--font-body` (DM Sans) |
+| Corner radius | `--radius-sm` 6px (buttons, inputs, badges) · `--radius-md` 12px (cards) · `--radius-lg` 20px (large panels) |
+| Content width | `--max-width` 1200px · `--auth-width` 440px |
 
-When you have no existing reference to follow, default to this. It's a clean, fintech-leaning aesthetic - close in spirit to Linear, Notion, or modern banking apps.
+Fonts are already loaded in `base.html`. Do not add new font imports.
 
-**Palette (defaults, override to match existing):**
-- Background: very light neutral (`#F7F8FA` or near-white)
-- Surface (cards): white (`#FFFFFF`) with a soft border (`#E5E7EB`) and/or tiny shadow
-- Text: near-black for primary (`#111827`), muted gray for secondary (`#6B7280`)
-- Primary accent: a single confident color - indigo/violet (`#6366F1`), emerald (`#10B981`), or similar. Pick one and stick with it.
-- Semantic: green for income/positive (`#10B981`), red for expense/negative (`#EF4444`), amber for warnings (`#F59E0B`)
+`style.css` has three older hardcoded colours (`#f5c6c2` in `.auth-error` and `#5b7fa6` / `#8b5e83` in the landing mock bars). Don't copy them. If you need those colours, turn them into tokens first.
 
-**Spacing:** 8px grid. Use multiples of 4px or 8px for padding, gap, margin. Don't use arbitrary values like 13px or 27px.
+## Reuse existing classes before making new ones
 
-**Radius:** `8px` for inputs and small elements, `12px` for cards, `16px` for modals. Pills/badges can be fully rounded.
+| Need | Class |
+|---|---|
+| Main button (ink, turns green on hover) | `.btn-primary` |
+| Secondary / outline button | `.btn-ghost` |
+| Full-width form submit | `.btn-submit` |
+| Form field wrapper and label | `.form-group` (with `<label>` inside) |
+| Text input | `.form-input` |
+| Error message box | `.auth-error` |
+| Card surface | follow `.auth-card`: `--paper-card` background, `1px solid var(--border)`, `--radius-md`, `2rem` padding |
 
-**Shadows:** subtle only. A card shadow like `0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06)` is the ceiling. No glows, no heavy drop shadows.
+New classes get a page prefix so they don't leak into other pages: `.profile-header`, `.profile-stat`, `.expense-table`, and so on.
 
-**Typography:** system font stack is fine (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`) or Inter if the project uses it. Type scale: 12 / 14 / 16 / 20 / 24 / 32. Font weights: 400 body, 500 medium, 600 semibold for headings. Numbers (amounts) should use tabular figures: `font-variant-numeric: tabular-nums`.
+## Spendly's visual language
 
-**Layout patterns:**
-- Card-based composition - group related info in surfaces, don't sprawl
-- Generous whitespace - tight layouts read as cluttered in finance apps
-- Left-aligned content with clear hierarchy; centered layouts only for empty states and auth
-- Tables: zebra stripes optional, but always have row hover, right-align numeric columns
-- Forms: label above input, helper text below, error state in red with icon
+It's an editorial, calm fintech look: ink on warm paper, with forest green as the single accent.
 
-## Icons: Lucide
+- **Hierarchy:** page titles and large figures use `--font-display`. Everything else uses `--font-body`. Labels are small (`0.8–0.85rem`) and set in `--ink-muted`.
+- **Spacing:** use `rem`, matching `style.css`: `0.5`, `0.75`, `1`, `1.25`, `1.5`, `2`, `4`, `5rem`. Cards take `2rem` padding (`1.25rem` on mobile). Grid gaps are `1–2rem`. Don't invent odd values.
+- **Surfaces:** use borders rather than shadows. A shadow is allowed only on one standout hero element, never stronger than `0 8px 40px rgba(0,0,0,0.06)`.
+- **Buttons and links:** the default is ink, with `--accent` on hover. Use `transition: … 0.2s`, as the existing styles do.
+- **Money:** show rupees as `₹` with two decimals, e.g. `₹{{ '%.2f'|format(amount) }}`. Use `font-variant-numeric: tabular-nums` for amounts and right-align numeric table columns. Format values in the template. Never change stored values.
+- **Categories:** the fixed list is Food, Transport, Bills, Health, Entertainment, Shopping, Other. Show them as small pills using `--accent-light` / `--accent-2-light` backgrounds. Don't give each category its own hardcoded colour.
+- **Tables:** give rows a hover state (`--paper-warm`), `--border-soft` dividers, and right-aligned amounts. Wrap tables in a container with `overflow-x: auto`.
+- **Empty states:** centre them, with one short line of text and a single next action (`.btn-primary`) linked with `url_for()`.
+- **Icons:** the brand uses the text glyph `◈`. Prefer plain text or Unicode glyphs. Don't add an icon library unless the user asks for one. If they do, load it once in `base.html` with an **exact pinned version** (never `@latest`), and flag it as a new external dependency.
 
-Load Lucide once in `base.html`:
+## Responsive rules
 
-```html
-<script src="https://unpkg.com/lucide@latest"></script>
-```
+`style.css` uses breakpoints at **900px** (multi-column layouts collapse to one column) and **600px** (tighter padding, simplified nav). Use the same two breakpoints. At about 375px, stat cards stack, tables scroll sideways, and nothing overflows the page.
 
-And call `lucide.createIcons()` after the DOM is ready (and after any dynamic DOM insert). In templates, use:
+## Jinja and Flask rules
 
-```html
-<i data-lucide="wallet"></i>
-<i data-lucide="trending-up"></i>
-<i data-lucide="plus"></i>
-```
-
-Size icons via CSS with `width` and `height` on the `<svg>` (after Lucide replaces the `<i>`) or wrap in a span with the size you want. Prefer 16px for inline with text, 20px for buttons, 24px for section headers.
-
-Pick icons that carry meaning. A few Spendly-appropriate defaults:
-- Expense/spend: `arrow-down-right`, `shopping-bag`, `credit-card`
-- Income: `arrow-up-right`, `wallet`, `trending-up`
-- Budget: `target`, `pie-chart`
-- Category: `tag`, `folder`
-- Add/new: `plus`, `plus-circle`
-- Settings: `settings`, `sliders-horizontal`
-- Date/time: `calendar`, `clock`
-- Search: `search`, Filter: `filter`
-
-Don't sprinkle icons everywhere. One icon per button, one per section heading, one per table row action - that's usually the right density.
+- Use `url_for()` for every internal link, form action and static file. Never hardcode a URL.
+- Use only the variables the current spec says the route passes. Don't invent data in the template.
+- Access fields with `row['field']` so plain dicts and `sqlite3.Row` both work.
+- Never display or reference `password_hash`.
+- Show form errors with `{% if error %}<div class="auth-error">{{ error }}</div>{% endif %}` and refill the fields the user typed (never the password).
 
 ## Output structure
 
-When fulfilling a design request, structure your response like this:
-
-### 1. Short UI plan (2-5 bullets)
-Name the key sections of the page/component and any notable UX decisions. Keep it tight - this is orientation, not a spec document. Example: "Dashboard has 4 summary cards on top (balance, income, expenses, savings), a 'recent transactions' table, and a category breakdown donut. Summary cards show trend vs last month as a small delta pill."
-
-### 2. The code
-- **Template file(s)** - full Jinja2 with `{% extends "base.html" %}` and a `{% block content %}` unless building `base.html` itself. Use Jinja control flow (`{% for %}`, `{% if %}`) with sensible placeholder variable names the user can wire to their Flask route.
-- **CSS** - either a new file (e.g. `static/css/dashboard.css`) or additions to an existing stylesheet. Scope with a page/component class prefix (`.dashboard-...`, `.tx-table-...`) so styles don't leak.
-- **JS** (only if needed) - vanilla, no frameworks. Small and readable.
-
-Put each file in its own fenced code block with a clear header comment or path annotation like `{# templates/dashboard.html #}` or `/* static/css/dashboard.css */`.
-
-### 3. Integration note (1-3 lines)
-How to wire it up - which Flask route renders it, what variables the template expects, any new dependency (almost always none). If the user needs to add a link in the sidebar or a route in `app.py`, call that out.
+1. **UI plan (2–5 bullets):** the sections and any UX decisions, with assumptions stated in one line each.
+2. **Code:** each file in its own fenced block with a path comment:
+   - `{# templates/<page>.html #}`: extends `base.html`, sets `{% block title %}` (e.g. `Profile — Spendly`), loads page CSS in `{% block head %}`
+   - `/* static/css/<page>.css */`: page-prefixed classes, tokens only
+   - JS only if it's truly needed
+3. **Integration note (1–3 lines):** the route, the template variables it expects, and any `base.html` change.
 
 ## What to avoid
 
-- **Generic/dated looks** - no `<h1>Welcome to My App</h1>` with default browser styles, no sharp-cornered bordered boxes, no 2012-era bootstrap cards.
-- **Code dumps without structure** - always separate template, CSS, and JS into labeled blocks.
-- **Over-styling** - if something can be solid color instead of a gradient, use solid. If it can be a border instead of a shadow, use border. Restraint reads as quality.
-- **Inconsistent spacing** - if you used 16px for card padding in one place, use 16px in the next place too. No 14px here, 18px there.
-- **Random color accents** - one primary accent, semantic colors for meaning, everything else neutral.
-- **Clever-but-unclear UX** - a clearly-labeled button beats a mystery icon. In finance, trust matters more than cuteness.
-- **Mobile afterthought** - use CSS that works at narrow widths. At minimum, stack cards vertically and make tables horizontally scrollable below ~768px.
+- Hardcoded colours, inline styles, or new fonts
+- Anything that drifts from the existing paper/ink/green look, such as gradients, glows, heavy shadows, or extra accent colours
+- Uneven spacing (16px in one place, 18px in another)
+- Mystery icon-only buttons. In a finance app, a clear label beats a clever icon.
+- Treating mobile as an afterthought
+- Implementing a stub route that the current step doesn't target (see the route table in `CLAUDE.md`)
 
 ## Handling ambiguity
 
-If the user asks for something under-specified ("design the reports page"), make reasonable assumptions and *state them up front* in the UI plan - one line each, no long preamble. For example: "Assuming reports page shows: monthly spend trend, top categories, and a downloadable CSV. Let me know if you want different widgets."
-
-Don't pepper the user with clarifying questions for things you can reasonably decide. Do ask when the answer genuinely changes the output - e.g. "Is this a standalone page or a modal on top of the dashboard?"
-
-## A worked example of the right vibe
-
-**Request:** "Design the add expense form"
-
-**UI plan:**
-- Modal dialog (not a full page) - users add expenses inline from the dashboard
-- Fields: amount (large, prominent), category (pill selector), date (defaults to today), note (optional)
-- Primary action "Add expense" anchors bottom-right; cancel is a subtle text button
-- Amount field gets a currency symbol prefix and tabular-nums
-
-**Template:** `templates/partials/add_expense_modal.html` - extends nothing, included via `{% include %}`. Uses a `.modal` overlay pattern already in `base.css` if present.
-
-**CSS:** additions to `static/css/components.css` for the new pill selector; reuses existing `.input`, `.btn-primary`, `.modal` classes.
-
-**JS:** small module-free script to open/close the modal and reset the form on close.
-
-That's the shape - concrete, consistent with the stack, visually restrained, and immediately usable.
-
-
-
-
+Make reasonable assumptions and state them in the UI plan. Ask only when the answer changes the output, for example "Should this be its own page or part of the profile page?"

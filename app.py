@@ -83,7 +83,7 @@ def logout():
 
 
 # ------------------------------------------------------------------ #
-# Placeholder routes — students will implement these                  #
+# Placeholder routes — implemented in later roadmap steps            #
 # ------------------------------------------------------------------ #
 
 
