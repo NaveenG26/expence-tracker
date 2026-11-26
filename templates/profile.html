@@ -18,6 +18,30 @@
         </div>
     </header>
 
+    <section class="filter-bar" aria-label="Filter by date">
+        <nav class="filter-presets" aria-label="Date presets">
+            {% for p in presets %}
+            <a href="{{ url_for('profile', date_from=p['date_from'], date_to=p['date_to']) if p['date_from'] else url_for('profile') }}"
+               class="filter-preset{% if p['active'] %} is-active{% endif %}"
+               {% if p['active'] %}aria-current="page"{% endif %}>{{ p['label'] }}</a>
+            {% endfor %}
+        </nav>
+        <form class="filter-form" method="get" action="{{ url_for('profile') }}">
+            <label class="filter-field">
+                <span class="filter-label">From</span>
+                <input type="date" name="date_from" class="form-input" value="{{ date_from or '' }}">
+            </label>
+            <label class="filter-field">
+                <span class="filter-label">To</span>
+                <input type="date" name="date_to" class="form-input" value="{{ date_to or '' }}">
+            </label>
+            <button type="submit" class="btn-primary filter-apply">Apply</button>
+        </form>
+        {% if filter_error %}
+        <p class="filter-error" role="alert">{{ filter_error }}</p>
+        {% endif %}
+    </section>
+
     <div class="profile-stats">
         <article class="profile-stat">
             <span class="profile-stat-label">Total spent</span>
@@ -82,6 +106,12 @@
         </section>
 
     </div>
+    {% elif is_filtered %}
+    <section class="profile-card profile-empty">
+        <h2 class="profile-card-title">No expenses in this period</h2>
+        <p class="profile-empty-text">Nothing was spent between {{ date_from|datefmt }} and {{ date_to|datefmt }}.</p>
+        <a href="{{ url_for('profile') }}" class="btn-ghost">View all time</a>
+    </section>
     {% else %}
     <section class="profile-card profile-empty">
         <h2 class="profile-card-title">No expenses yet</h2>
