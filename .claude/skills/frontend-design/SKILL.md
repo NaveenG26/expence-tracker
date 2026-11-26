@@ -1,12 +1,12 @@
 ---
 name: frontend-design
-description: Designs and builds UI for Spendly, Naveen's personal expense tracker (repo - https://github.com/NaveenG26/expence-tracker), using Flask + Jinja2 + vanilla CSS + vanilla JS. Produces pages and components (cards, forms, tables, stat tiles, empty states) that match Spendly's existing warm-paper, ink-and-forest-green look by reusing the CSS variables and classes in static/css/style.css. Use when the user asks to design, build, create, redesign, improve, or style any Spendly page, screen, section, or component - e.g. "design the X page", "create UI for X", "make the X look better" - or any request about Spendly's templates, layout, CSS, or visual polish.
+description: Designs and builds UI for BrokeAF, Naveen's personal expense tracker (repo - https://github.com/NaveenG26/expence-tracker), using Flask + Jinja2 + vanilla CSS + vanilla JS. Produces pages and components (cards, forms, tables, stat tiles, empty states) that match BrokeAF's existing warm-paper, ink-and-forest-green look by reusing the CSS variables and classes in static/css/style.css. Use when the user asks to design, build, create, redesign, improve, or style any BrokeAF page, screen, section, or component - e.g. "design the X page", "create UI for X", "make the X look better" - or any request about BrokeAF's templates, layout, CSS, or visual polish.
 disable-model-invocation: true
 ---
 
-# Spendly UI Designer
+# BrokeAF UI Designer
 
-You are designing frontend UI for **Spendly**, a personal expense tracker built with Flask and SQLite. Pages are server-rendered Jinja2 templates styled with vanilla CSS, with small amounts of vanilla JS. Every new page must look like it belongs next to the existing landing, login and register pages: one coherent product, not a collage.
+You are designing frontend UI for **BrokeAF**, a personal expense tracker built with Flask and SQLite. Pages are server-rendered Jinja2 templates styled with vanilla CSS, with small amounts of vanilla JS. Every new page must look like it belongs next to the existing landing, login and register pages: one coherent product, not a collage.
 
 `CLAUDE.md` is the source of truth for project rules. If anything here conflicts with it, `CLAUDE.md` wins.
 
@@ -67,7 +67,7 @@ Fonts are already loaded in `base.html`. Do not add new font imports.
 
 New classes get a page prefix so they don't leak into other pages: `.profile-header`, `.profile-stat`, `.expense-table`, and so on.
 
-## Spendly's visual language
+## BrokeAF's visual language
 
 It's an editorial, calm fintech look: ink on warm paper, with forest green as the single accent.
 
@@ -97,7 +97,7 @@ It's an editorial, calm fintech look: ink on warm paper, with forest green as th
 
 1. **UI plan (2–5 bullets):** the sections and any UX decisions, with assumptions stated in one line each.
 2. **Code:** each file in its own fenced block with a path comment:
-   - `{# templates/<page>.html #}`: extends `base.html`, sets `{% block title %}` (e.g. `Profile — Spendly`), loads page CSS in `{% block head %}`
+   - `{# templates/<page>.html #}`: extends `base.html`, sets `{% block title %}` (e.g. `Profile — BrokeAF`), loads page CSS in `{% block head %}`
    - `/* static/css/<page>.css */`: page-prefixed classes, tokens only
    - JS only if it's truly needed
 3. **Integration note (1–3 lines):** the route, the template variables it expects, and any `base.html` change.
