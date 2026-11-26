@@ -1,6 +1,7 @@
+import calendar
 import os
 import sqlite3
-from datetime import datetime
+from datetime import date, datetime
 
 from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
@@ -35,6 +36,62 @@ def format_date(value, fmt="%d %b %Y"):
         return datetime.strptime(str(value)[:10], "%Y-%m-%d").strftime(fmt)
     except (TypeError, ValueError):
         return value
+
+
+# ------------------------------------------------------------------ #
+# Date filter helpers                                                 #
+# ------------------------------------------------------------------ #
+
+FILTER_ERROR_REVERSED = "Start date must be before end date."
+
+
+def _parse_iso_date(value):
+    try:
+        return datetime.strptime((value or "").strip(), "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def parse_date_range(args):
+    """Return (date_from, date_to, filter_error) from query args.
+
+    Dates come back as normalised ISO strings, or None when the filter
+    should not apply (either bound missing, malformed, or reversed).
+    """
+    start = _parse_iso_date(args.get("date_from"))
+    end = _parse_iso_date(args.get("date_to"))
+    if start is None or end is None:
+        return None, None, None
+    if start > end:
+        return None, None, FILTER_ERROR_REVERSED
+    return start.isoformat(), end.isoformat(), None
+
+
+def months_ago(d, months):
+    """Same day `months` calendar months earlier, clamped to month end."""
+    year, month = divmod(d.year * 12 + (d.month - 1) - months, 12)
+    month += 1
+    day = min(d.day, calendar.monthrange(year, month)[1])
+    return date(year, month, day)
+
+
+def build_presets(today, date_from=None, date_to=None):
+    end = today.isoformat()
+    ranges = [
+        ("This Month", today.replace(day=1).isoformat(), end),
+        ("Last 3 Months", months_ago(today, 3).isoformat(), end),
+        ("Last 6 Months", months_ago(today, 6).isoformat(), end),
+        ("All Time", None, None),
+    ]
+    return [
+        {
+            "label": label,
+            "date_from": start,
+            "date_to": stop,
+            "active": (start, stop) == (date_from, date_to),
+        }
+        for label, start, stop in ranges
+    ]
 
 
 # ------------------------------------------------------------------ #
@@ -120,12 +177,19 @@ def profile():
         session.clear()
         return redirect(url_for("login"))
 
+    date_from, date_to, filter_error = parse_date_range(request.args)
+    date_range = {"date_from": date_from, "date_to": date_to}
     return render_template(
         "profile.html",
         user=user,
-        summary=get_expense_summary(user_id),
-        category_breakdown=get_category_breakdown(user_id),
-        recent_expenses=get_recent_expenses(user_id),
+        summary=get_expense_summary(user_id, **date_range),
+        category_breakdown=get_category_breakdown(user_id, **date_range),
+        recent_expenses=get_recent_expenses(user_id, **date_range),
+        presets=build_presets(date.today(), date_from, date_to),
+        date_from=date_from,
+        date_to=date_to,
+        filter_error=filter_error,
+        is_filtered=date_from is not None,
     )
 
 

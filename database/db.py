@@ -89,7 +89,20 @@ def get_user_by_id(user_id):
         conn.close()
 
 
-def get_expense_summary(user_id):
+def _date_clause(date_from, date_to):
+    """Optional inclusive date-range filter as a fixed SQL fragment.
+
+    Returns ("", ()) unless both bounds are given. The fragment is a
+    constant; the dates are always bound as parameters.
+    """
+    if date_from and date_to:
+        return " AND date BETWEEN ? AND ?", (date_from, date_to)
+    return "", ()
+
+
+def get_expense_summary(user_id, date_from=None, date_to=None):
+    clause, date_params = _date_clause(date_from, date_to)
+    params = (user_id, *date_params)
     conn = get_db()
     try:
         totals = conn.execute(
@@ -98,19 +111,20 @@ def get_expense_summary(user_id):
                    COUNT(*) AS expense_count
             FROM expenses
             WHERE user_id = ?
-            """,
-            (user_id,),
+            """ + clause,
+            params,
         ).fetchone()
         top = conn.execute(
             """
             SELECT category
             FROM expenses
             WHERE user_id = ?
+            """ + clause + """
             GROUP BY category
             ORDER BY SUM(amount) DESC, category ASC
             LIMIT 1
             """,
-            (user_id,),
+            params,
         ).fetchone()
         return {
             "total_spent": totals["total_spent"],
@@ -121,7 +135,8 @@ def get_expense_summary(user_id):
         conn.close()
 
 
-def get_category_totals(user_id):
+def get_category_totals(user_id, date_from=None, date_to=None):
+    clause, date_params = _date_clause(date_from, date_to)
     conn = get_db()
     try:
         return conn.execute(
@@ -129,22 +144,23 @@ def get_category_totals(user_id):
             SELECT category, ROUND(SUM(amount), 2) AS total
             FROM expenses
             WHERE user_id = ?
+            """ + clause + """
             GROUP BY category
             ORDER BY total DESC, category ASC
             """,
-            (user_id,),
+            (user_id, *date_params),
         ).fetchall()
     finally:
         conn.close()
 
 
-def get_category_breakdown(user_id):
+def get_category_breakdown(user_id, date_from=None, date_to=None):
     """Category totals with an integer `pct` share that always sums to 100.
 
     Each share is rounded to the nearest int; the largest category (first
     row) absorbs any rounding remainder.
     """
-    rows = get_category_totals(user_id)
+    rows = get_category_totals(user_id, date_from=date_from, date_to=date_to)
     grand_total = sum(row["total"] for row in rows)
     if not rows or grand_total <= 0:
         return [
@@ -164,7 +180,8 @@ def get_category_breakdown(user_id):
     return breakdown
 
 
-def get_recent_expenses(user_id, limit=10):
+def get_recent_expenses(user_id, limit=10, date_from=None, date_to=None):
+    clause, date_params = _date_clause(date_from, date_to)
     conn = get_db()
     try:
         return conn.execute(
@@ -172,10 +189,11 @@ def get_recent_expenses(user_id, limit=10):
             SELECT id, amount, category, date, description
             FROM expenses
             WHERE user_id = ?
+            """ + clause + """
             ORDER BY date DESC, id DESC
             LIMIT ?
             """,
-            (user_id, limit),
+            (user_id, *date_params, limit),
         ).fetchall()
     finally:
         conn.close()
