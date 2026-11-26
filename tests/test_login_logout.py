@@ -8,7 +8,7 @@ def test_get_login_renders_form(client):
     response = client.get("/login")
     assert response.status_code == 200
     assert b"Welcome back" in response.data
-    assert b"Sign in" in response.data
+    assert b"Log in" in response.data
 
 
 def test_demo_login_sets_session_and_redirects(client):
@@ -113,14 +113,14 @@ def test_logout_while_logged_out_redirects(client):
 def test_nav_reflects_login_state(client):
     seed_db()
     page = client.get("/login").data
-    assert b"Get started" in page
-    assert b"Sign out" not in page
+    assert b'class="nav-cta">Sign up<' in page
+    assert b"Log out" not in page
 
     client.post("/login", data=DEMO)
     page = client.get("/", follow_redirects=True).data
-    assert b"Sign out" in page
+    assert b"Log out" in page
     assert b"Demo User" in page
-    assert b"Get started" not in page
+    assert b'class="nav-cta">Sign up<' not in page
 
 
 def test_login_lands_on_profile_page(client):
