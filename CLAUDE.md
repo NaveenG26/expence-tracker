@@ -18,7 +18,8 @@ brokeaf/
 ├── static/
 │   ├── css/
 │   │   ├── style.css       # Global styles
-│   │   └── profile.css     # Profile-page-only styles
+│   │   ├── profile.css     # Profile-page-only styles
+│   │   └── add_expense.css # Add-expense-page-only styles
 │   └── js/
 │       └── main.js         # Vanilla JS only
 └── requirements.txt
@@ -97,7 +98,7 @@ pytest -s
 | `GET/POST /login` | Implemented — renders `login.html`, authenticates and sets session |
 | `GET /logout` | Implemented — clears session, redirects to `/` |
 | `GET /profile` | Implemented — renders `profile.html` (login required): account info, stats, category breakdown, recent expenses. Optional `date_from` / `date_to` query params (`YYYY-MM-DD`, both required, inclusive) filter all sections |
-| `GET /expenses/add` | Stub — Step 7 |
+| `GET/POST /expenses/add` | Implemented — renders `add_expense.html` (login required), validates via `validate_expense_form()`, inserts via `create_expense`, redirects to `/profile` |
 | `GET /expenses/<id>/edit` | Stub — Step 8 |
 | `GET /expenses/<id>/delete` | Stub — Step 9 |
 
@@ -112,6 +113,6 @@ pytest -s
 - **Never put DB logic in route functions** — it belongs in `database/db.py`
 - **Never install new packages** mid-feature without flagging it — keep `requirements.txt` in sync
 - **Never use JS frameworks** — the frontend is intentionally vanilla
-- **Reuse existing DB helpers** — `create_user`, `get_user_by_email`, `get_user_by_id`, `get_expense_summary`, `get_category_totals`, `get_category_breakdown`, `get_recent_expenses` already exist in `database/db.py`; don't write duplicate queries. The expense helpers accept optional `date_from` / `date_to` kwargs — extend them rather than adding `*_filtered` copies
+- **Reuse existing DB helpers** — `create_user`, `get_user_by_email`, `get_user_by_id`, `get_expense_summary`, `get_category_totals`, `get_category_breakdown`, `get_recent_expenses`, `create_expense` already exist in `database/db.py`; don't write duplicate queries. Expense form validation lives in `validate_expense_form()` in `app.py` — reuse it for edit (Step 8). The expense helpers accept optional `date_from` / `date_to` kwargs — extend them rather than adding `*_filtered` copies
 - **FK enforcement is manual** — SQLite foreign keys are off by default; `get_db()` must run `PRAGMA foreign_keys = ON` on every connection
 - The app runs on **port 5001**, not the Flask default 5000 — don't change this

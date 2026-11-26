@@ -89,6 +89,22 @@ def get_user_by_id(user_id):
         conn.close()
 
 
+def create_expense(user_id, amount, category, date, description=None):
+    conn = get_db()
+    try:
+        cursor = conn.execute(
+            """
+            INSERT INTO expenses (user_id, amount, category, date, description)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (user_id, amount, category, date, description),
+        )
+        conn.commit()
+        return cursor.lastrowid
+    finally:
+        conn.close()
+
+
 def _date_clause(date_from, date_to):
     """Optional inclusive date-range filter as a fixed SQL fragment.
 
