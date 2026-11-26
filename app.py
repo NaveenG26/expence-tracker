@@ -7,8 +7,7 @@ from werkzeug.security import check_password_hash
 
 from database.db import (
     create_user,
-    get_category_totals,
-    get_db,
+    get_category_breakdown,
     get_expense_summary,
     get_recent_expenses,
     get_user_by_email,
@@ -125,7 +124,7 @@ def profile():
         "profile.html",
         user=user,
         summary=get_expense_summary(user_id),
-        category_totals=get_category_totals(user_id),
+        category_breakdown=get_category_breakdown(user_id),
         recent_expenses=get_recent_expenses(user_id),
     )
 

@@ -39,17 +39,16 @@
         <section class="profile-card">
             <h2 class="profile-card-title">Spending by category</h2>
             <ul class="category-list">
-                {% for c in category_totals %}
-                {% set pct = (c['total'] / summary['total_spent'] * 100) if summary['total_spent'] else 0 %}
+                {% for c in category_breakdown %}
                 <li class="category-row">
                     <span class="category-pill">{{ c['category'] }}</span>
                     <progress class="category-bar"
                               value="{{ '%.2f'|format(c['total']) }}"
                               max="{{ '%.2f'|format(summary['total_spent']) }}"
-                              aria-label="{{ c['category'] }} share of spending">{{ pct|round|int }}%</progress>
+                              aria-label="{{ c['category'] }} share of spending">{{ c['pct'] }}%</progress>
                     <span class="category-amount">
                         {{ c['total']|inr }}
-                        <span class="category-pct">{{ pct|round|int }}%</span>
+                        <span class="category-pct">{{ c['pct'] }}%</span>
                     </span>
                 </li>
                 {% endfor %}

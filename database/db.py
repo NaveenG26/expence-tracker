@@ -138,6 +138,32 @@ def get_category_totals(user_id):
         conn.close()
 
 
+def get_category_breakdown(user_id):
+    """Category totals with an integer `pct` share that always sums to 100.
+
+    Each share is rounded to the nearest int; the largest category (first
+    row) absorbs any rounding remainder.
+    """
+    rows = get_category_totals(user_id)
+    grand_total = sum(row["total"] for row in rows)
+    if not rows or grand_total <= 0:
+        return [
+            {"category": row["category"], "total": row["total"], "pct": 0}
+            for row in rows
+        ]
+
+    breakdown = [
+        {
+            "category": row["category"],
+            "total": row["total"],
+            "pct": round(row["total"] / grand_total * 100),
+        }
+        for row in rows
+    ]
+    breakdown[0]["pct"] += 100 - sum(item["pct"] for item in breakdown)
+    return breakdown
+
+
 def get_recent_expenses(user_id, limit=10):
     conn = get_db()
     try:
