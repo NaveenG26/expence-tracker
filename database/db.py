@@ -78,6 +78,83 @@ def get_user_by_email(email):
         conn.close()
 
 
+def get_user_by_id(user_id):
+    conn = get_db()
+    try:
+        return conn.execute(
+            "SELECT id, name, email, created_at FROM users WHERE id = ?",
+            (user_id,),
+        ).fetchone()
+    finally:
+        conn.close()
+
+
+def get_expense_summary(user_id):
+    conn = get_db()
+    try:
+        totals = conn.execute(
+            """
+            SELECT ROUND(COALESCE(SUM(amount), 0), 2) AS total_spent,
+                   COUNT(*) AS expense_count
+            FROM expenses
+            WHERE user_id = ?
+            """,
+            (user_id,),
+        ).fetchone()
+        top = conn.execute(
+            """
+            SELECT category
+            FROM expenses
+            WHERE user_id = ?
+            GROUP BY category
+            ORDER BY SUM(amount) DESC, category ASC
+            LIMIT 1
+            """,
+            (user_id,),
+        ).fetchone()
+        return {
+            "total_spent": totals["total_spent"],
+            "expense_count": totals["expense_count"],
+            "top_category": top["category"] if top else None,
+        }
+    finally:
+        conn.close()
+
+
+def get_category_totals(user_id):
+    conn = get_db()
+    try:
+        return conn.execute(
+            """
+            SELECT category, ROUND(SUM(amount), 2) AS total
+            FROM expenses
+            WHERE user_id = ?
+            GROUP BY category
+            ORDER BY total DESC, category ASC
+            """,
+            (user_id,),
+        ).fetchall()
+    finally:
+        conn.close()
+
+
+def get_recent_expenses(user_id, limit=10):
+    conn = get_db()
+    try:
+        return conn.execute(
+            """
+            SELECT id, amount, category, date, description
+            FROM expenses
+            WHERE user_id = ?
+            ORDER BY date DESC, id DESC
+            LIMIT ?
+            """,
+            (user_id, limit),
+        ).fetchall()
+    finally:
+        conn.close()
+
+
 def seed_db():
     conn = get_db()
 

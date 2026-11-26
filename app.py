@@ -1,13 +1,41 @@
 import os
 import sqlite3
+from datetime import datetime
 
 from flask import Flask, redirect, render_template, request, session, url_for
 from werkzeug.security import check_password_hash
 
-from database.db import create_user, get_db, get_user_by_email, init_db, seed_db
+from database.db import (
+    create_user,
+    get_category_totals,
+    get_db,
+    get_expense_summary,
+    get_recent_expenses,
+    get_user_by_email,
+    get_user_by_id,
+    init_db,
+    seed_db,
+)
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-only-insecure-key")
+
+
+# ------------------------------------------------------------------ #
+# Template filters                                                    #
+# ------------------------------------------------------------------ #
+
+@app.template_filter("inr")
+def format_inr(value):
+    return f"₹{(value or 0):.2f}"
+
+
+@app.template_filter("datefmt")
+def format_date(value, fmt="%d %b %Y"):
+    try:
+        return datetime.strptime(str(value)[:10], "%Y-%m-%d").strftime(fmt)
+    except (TypeError, ValueError):
+        return value
 
 
 # ------------------------------------------------------------------ #
@@ -82,14 +110,29 @@ def logout():
     return redirect(url_for("landing"))
 
 
+@app.route("/profile")
+def profile():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect(url_for("login"))
+
+    user = get_user_by_id(user_id)
+    if user is None:
+        session.clear()
+        return redirect(url_for("login"))
+
+    return render_template(
+        "profile.html",
+        user=user,
+        summary=get_expense_summary(user_id),
+        category_totals=get_category_totals(user_id),
+        recent_expenses=get_recent_expenses(user_id),
+    )
+
+
 # ------------------------------------------------------------------ #
 # Placeholder routes — implemented in later roadmap steps            #
 # ------------------------------------------------------------------ #
-
-
-@app.route("/profile")
-def profile():
-    return "Profile page — coming in Step 4"
 
 
 @app.route("/expenses/add")
