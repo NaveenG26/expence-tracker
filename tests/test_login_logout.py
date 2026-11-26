@@ -123,8 +123,12 @@ def test_nav_reflects_login_state(client):
     assert b"Get started" not in page
 
 
-def test_profile_still_stub(client):
-    assert b"coming in Step 4" in client.get("/profile").data
+def test_login_lands_on_profile_page(client):
+    seed_db()
+    response = client.post("/login", data=DEMO, follow_redirects=True)
+    assert response.status_code == 200
+    assert b"Demo User" in response.data
+    assert b"coming in Step 4" not in response.data
 
 
 def test_secret_key_configured(app):
