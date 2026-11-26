@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Create account — Spendly{% endblock %}
+{% block title %}Sign up — Spendly{% endblock %}
 
 {% block content %}
 
@@ -36,13 +36,13 @@
                            class="form-input" placeholder="Min. 8 characters"
                            required>
                 </div>
-                <button type="submit" class="btn-submit">Create account</button>
+                <button type="submit" class="btn-submit">Sign up</button>
             </form>
         </div>
 
         <p class="auth-switch">
             Already have an account?
-            <a href="{{ url_for('login') }}">Sign in</a>
+            <a href="{{ url_for('login') }}">Log in</a>
         </p>
 
     </div>

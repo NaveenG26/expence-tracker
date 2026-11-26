@@ -112,6 +112,6 @@ pytest -s
 - **Never put DB logic in route functions** — it belongs in `database/db.py`
 - **Never install new packages** mid-feature without flagging it — keep `requirements.txt` in sync
 - **Never use JS frameworks** — the frontend is intentionally vanilla
-- **Reuse existing DB helpers** — `create_user`, `get_user_by_email`, `get_user_by_id`, `get_expense_summary`, `get_category_totals`, `get_recent_expenses` already exist in `database/db.py`; don't write duplicate queries
+- **Reuse existing DB helpers** — `create_user`, `get_user_by_email`, `get_user_by_id`, `get_expense_summary`, `get_category_totals`, `get_category_breakdown`, `get_recent_expenses` already exist in `database/db.py`; don't write duplicate queries
 - **FK enforcement is manual** — SQLite foreign keys are off by default; `get_db()` must run `PRAGMA foreign_keys = ON` on every connection
 - The app runs on **port 5001**, not the Flask default 5000 — don't change this
