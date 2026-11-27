@@ -79,7 +79,7 @@ def test_seeded_demo_email_rejected(client):
     seed_db()
     before = user_count()
     response = client.post(
-        "/register", data={**VALID, "email": "demo@spendly.com"}
+        "/register", data={**VALID, "email": "demo@brokeaf.com"}
     )
     assert response.status_code == 400
     assert b"already exists" in response.data

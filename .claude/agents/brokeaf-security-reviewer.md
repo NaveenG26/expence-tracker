@@ -26,7 +26,7 @@ Quick facts to keep in mind while reviewing (full rules are in `CLAUDE.md`):
 - **Passwords**: hashed with `werkzeug.security.generate_password_hash` in `create_user`; checked with `check_password_hash` in `/login`
 - **Secret key**: `app.secret_key = os.environ.get("SECRET_KEY", "dev-only-insecure-key")`
 - **Dev server**: `app.run(debug=True, port=5001)` under `if __name__ == "__main__"`, which only runs locally
-- **Seed data**: `seed_db()` creates a demo login (`demo@spendly.com` / `demo123`) for local development
+- **Seed data**: `seed_db()` creates a demo login (`demo@brokeaf.com` / `demo123`) for local development
 - **Ignored by git**: `.gitignore` already excludes `expense_tracker.db`, `.env`, and `venv/`
 - **Python 3.10+**, **no new pip packages**
 

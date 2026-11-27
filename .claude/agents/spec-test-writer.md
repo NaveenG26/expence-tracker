@@ -22,7 +22,7 @@ You write tests from the **feature spec and expected behavior**, never by readin
 - **Templates**: in `templates/`, all extend `base.html`
 - **Auth**: session-based; on login, `session["user_id"]` and `session["user_name"]` are set; protected routes redirect anonymous users to `/login`
 - **Forms**: register posts `name`, `email`, `password`; login posts `email`, `password` (email is stripped and lower-cased)
-- **Seed data**: `seed_db()` creates `Demo User` / `demo@spendly.com` / `demo123` along with sample expenses
+- **Seed data**: `seed_db()` creates `Demo User` / `demo@brokeaf.com` / `demo123` along with sample expenses
 - **Currency**: amounts render with `₹` via the `inr` filter
 - **Test runner**: `pytest` with `pytest-flask`; no other packages (`requirements.txt` is fixed)
 - **Port 5001** applies to the dev server only; it doesn't matter for the test client
@@ -56,7 +56,7 @@ from database.db import seed_db
 def auth_client(client):
     """A test client logged in as the seeded demo user."""
     seed_db()
-    client.post("/login", data={"email": "demo@spendly.com", "password": "demo123"})
+    client.post("/login", data={"email": "demo@brokeaf.com", "password": "demo123"})
     return client
 
 @pytest.fixture

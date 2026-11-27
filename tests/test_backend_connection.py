@@ -13,7 +13,7 @@ from database.db import (
     seed_db,
 )
 
-DEMO = {"email": "demo@spendly.com", "password": "demo123"}
+DEMO = {"email": "demo@brokeaf.com", "password": "demo123"}
 SEED_TOTAL = 283.45
 SEED_CATEGORIES = [
     "Bills", "Shopping", "Food", "Health", "Entertainment", "Transport", "Other",
@@ -57,7 +57,7 @@ def test_get_user_by_id_valid(app):
     seed_db()
     user = get_user_by_id(demo_id())
     assert user["name"] == "Demo User"
-    assert user["email"] == "demo@spendly.com"
+    assert user["email"] == "demo@brokeaf.com"
     assert user["created_at"]
 
 
@@ -165,7 +165,7 @@ def test_profile_seed_user_live_data(client):
 
     assert response.status_code == 200
     assert "Demo User" in body
-    assert "demo@spendly.com" in body
+    assert "demo@brokeaf.com" in body
     assert "₹" in body
     assert "£" not in body and "$" not in body
     assert f"₹{SEED_TOTAL:.2f}" in body

@@ -28,7 +28,7 @@ Open <http://localhost:5001>. On first run the app creates `expense_tracker.db` 
 
 | Email | Password |
 |---|---|
-| `demo@spendly.com` | `demo123` |
+| `demo@brokeaf.com` | `demo123` |
 
 Set `SECRET_KEY` in your environment for anything beyond local development.
 

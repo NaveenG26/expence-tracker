@@ -1,6 +1,6 @@
 from database.db import seed_db
 
-DEMO = {"email": "demo@spendly.com", "password": "demo123"}
+DEMO = {"email": "demo@brokeaf.com", "password": "demo123"}
 ERROR = b"Invalid email or password"
 
 
@@ -36,7 +36,7 @@ def test_registered_user_can_log_in(client):
 def test_email_case_and_whitespace_insensitive(client):
     seed_db()
     response = client.post(
-        "/login", data={"email": "  DEMO@Spendly.com ", "password": "demo123"}
+        "/login", data={"email": "  DEMO@BrokeAF.com ", "password": "demo123"}
     )
     assert response.status_code == 302
 
@@ -82,7 +82,7 @@ def test_failed_login_repopulates_email_not_password(client):
     response = client.post(
         "/login", data={"email": DEMO["email"], "password": "wrongpass"}
     )
-    assert b'value="demo@spendly.com"' in response.data
+    assert b'value="demo@brokeaf.com"' in response.data
     assert b"wrongpass" not in response.data
 
 
