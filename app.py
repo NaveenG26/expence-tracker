@@ -1,12 +1,25 @@
 import calendar
+import hmac
+import math
 import os
+import secrets
 import sqlite3
 from datetime import date, datetime
 
-from flask import Flask, redirect, render_template, request, session, url_for
+from flask import (
+    Flask,
+    abort,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from werkzeug.security import check_password_hash
 
 from database.db import (
+    CATEGORIES,
+    create_expense,
     create_user,
     get_category_breakdown,
     get_expense_summary,
@@ -15,10 +28,49 @@ from database.db import (
     get_user_by_id,
     init_db,
     seed_db,
+    seed_dummy_expenses,
 )
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("SECRET_KEY", "dev-only-insecure-key")
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["CSRF_ENABLED"] = True
+
+
+# ------------------------------------------------------------------ #
+# Auth and CSRF helpers                                               #
+# ------------------------------------------------------------------ #
+
+def get_current_user():
+    """Return the logged-in user row, or None (clearing a stale session)."""
+    user_id = session.get("user_id")
+    if not user_id:
+        return None
+    user = get_user_by_id(user_id)
+    if user is None:
+        session.clear()
+    return user
+
+
+def get_csrf_token():
+    token = session.get("csrf_token")
+    if not token:
+        token = secrets.token_urlsafe(32)
+        session["csrf_token"] = token
+    return token
+
+
+app.jinja_env.globals["csrf_token"] = get_csrf_token
+
+
+@app.before_request
+def check_csrf_token():
+    if request.method != "POST" or not app.config["CSRF_ENABLED"]:
+        return
+    expected = session.get("csrf_token")
+    submitted = request.form.get("csrf_token", "")
+    if not expected or not hmac.compare_digest(expected, submitted):
+        abort(400)
 
 
 # ------------------------------------------------------------------ #
@@ -95,6 +147,57 @@ def build_presets(today, date_from=None, date_to=None):
 
 
 # ------------------------------------------------------------------ #
+# Expense form helpers                                                #
+# ------------------------------------------------------------------ #
+
+MAX_AMOUNT = 10_000_000
+MAX_DESCRIPTION_LENGTH = 200
+
+
+def validate_expense_form(form, today):
+    """Return (values, error) for an add/edit expense form.
+
+    On success `values` matches create_expense()'s keyword arguments and
+    `error` is None. On failure `values` is None. Never reads user_id.
+    """
+    try:
+        amount = float((form.get("amount") or "").strip())
+    except ValueError:
+        return None, "Enter a valid amount"
+    if not math.isfinite(amount):
+        return None, "Enter a valid amount"
+    amount = round(amount, 2)
+    if amount <= 0:
+        return None, "Amount must be greater than zero"
+    if amount > MAX_AMOUNT:
+        return None, f"Amount must be {MAX_AMOUNT:,} or less"
+
+    category = (form.get("category") or "").strip()
+    if category not in CATEGORIES:
+        return None, "Choose a valid category"
+
+    expense_date = _parse_iso_date(form.get("date"))
+    if expense_date is None:
+        return None, "Enter a valid date"
+    if expense_date > today:
+        return None, "Date cannot be in the future"
+
+    description = (form.get("description") or "").strip() or None
+    if description and len(description) > MAX_DESCRIPTION_LENGTH:
+        return (
+            None,
+            f"Description must be {MAX_DESCRIPTION_LENGTH} characters or fewer",
+        )
+
+    return {
+        "amount": amount,
+        "category": category,
+        "expense_date": expense_date.isoformat(),
+        "description": description,
+    }, None
+
+
+# ------------------------------------------------------------------ #
 # Routes                                                              #
 # ------------------------------------------------------------------ #
 
@@ -122,9 +225,11 @@ def register():
 
     if not error:
         try:
-            create_user(name, email, password)
+            user_id = create_user(name, email, password)
         except sqlite3.IntegrityError:
             error = "An account with that email already exists"
+        else:
+            seed_dummy_expenses(user_id)
 
     if error:
         return (
@@ -168,14 +273,10 @@ def logout():
 
 @app.route("/profile")
 def profile():
-    user_id = session.get("user_id")
-    if not user_id:
-        return redirect(url_for("login"))
-
-    user = get_user_by_id(user_id)
+    user = get_current_user()
     if user is None:
-        session.clear()
         return redirect(url_for("login"))
+    user_id = user["id"]
 
     date_from, date_to, filter_error = parse_date_range(request.args)
     date_range = {"date_from": date_from, "date_to": date_to}
@@ -193,14 +294,39 @@ def profile():
     )
 
 
+@app.route("/expenses/add", methods=["GET", "POST"])
+def add_expense():
+    user = get_current_user()
+    if user is None:
+        return redirect(url_for("login"))
+
+    today = date.today()
+    form = {"date": today.isoformat()}
+    error = None
+
+    if request.method == "POST":
+        values, error = validate_expense_form(request.form, today)
+        if not error:
+            create_expense(user["id"], **values)
+            return redirect(url_for("profile"))
+        form = request.form
+
+    status = 400 if error else 200
+    page = render_template(
+        "add_expense.html",
+        form=form,
+        error=error,
+        categories=CATEGORIES,
+        today=today.isoformat(),
+        max_amount=MAX_AMOUNT,
+        max_description_length=MAX_DESCRIPTION_LENGTH,
+    )
+    return page, status
+
+
 # ------------------------------------------------------------------ #
 # Placeholder routes — implemented in later roadmap steps            #
 # ------------------------------------------------------------------ #
-
-
-@app.route("/expenses/add")
-def add_expense():
-    return "Add expense — coming in Step 7"
 
 
 @app.route("/expenses/<int:id>/edit")

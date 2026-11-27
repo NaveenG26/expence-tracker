@@ -201,10 +201,8 @@ def test_profile_breakdown_has_all_categories_summing_to_100(client):
 
 
 def test_profile_new_user_shows_zero_state(client):
-    client.post(
-        "/register",
-        data={"name": "Fresh User", "email": "fresh@example.com", "password": "password123"},
-    )
+    # create_user() directly: /register now seeds dummy expenses.
+    create_user("Fresh User", "fresh@example.com", "password123")
     login(client, "fresh@example.com", "password123")
     response = client.get("/profile")
     body = response.data.decode()

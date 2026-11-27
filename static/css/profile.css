@@ -35,6 +35,11 @@
 
 .profile-identity { min-width: 0; }
 
+.profile-add-btn {
+    margin-left: auto;
+    white-space: nowrap;
+}
+
 .profile-name {
     font-family: var(--font-display);
     font-size: 2rem;
@@ -328,6 +333,8 @@
 
 @media (max-width: 600px) {
     .profile-page { padding: 2rem 1rem 3rem; gap: 1.5rem; }
+    .profile-header { flex-wrap: wrap; }
+    .profile-add-btn { margin-left: 0; width: 100%; text-align: center; }
     .profile-stats { grid-template-columns: 1fr; gap: 1rem; }
     .profile-stat,
     .profile-card { padding: 1.25rem; }

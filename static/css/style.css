@@ -449,6 +449,8 @@ a { color: inherit; text-decoration: none; }
 
 .form-input::placeholder { color: var(--ink-faint); }
 
+select.form-input { cursor: pointer; }
+
 .btn-submit {
     width: 100%;
     padding: 0.7rem;

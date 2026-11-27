@@ -1,3 +1,4 @@
+import random
 import sqlite3
 from datetime import date, timedelta
 
@@ -85,6 +86,96 @@ def get_user_by_id(user_id):
             "SELECT id, name, email, created_at FROM users WHERE id = ?",
             (user_id,),
         ).fetchone()
+    finally:
+        conn.close()
+
+
+def create_expense(user_id, amount, category, expense_date, description=None):
+    conn = get_db()
+    try:
+        cursor = conn.execute(
+            """
+            INSERT INTO expenses (user_id, amount, category, date, description)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (user_id, amount, category, expense_date, description),
+        )
+        conn.commit()
+        return cursor.lastrowid
+    finally:
+        conn.close()
+
+
+# Dummy data for new accounts — same rules as the /seed-expense command:
+# (weight, min ₹, max ₹, descriptions). Food most common; Health and
+# Entertainment least.
+DUMMY_EXPENSE_PROFILE = {
+    "Food": (30, 50, 800, [
+        "Swiggy order", "Zomato dinner", "Groceries from BigBasket",
+        "Chai and samosa", "Lunch at office canteen", "Dosa breakfast",
+        "Vegetables from mandi", "Biryani takeaway",
+    ]),
+    "Transport": (18, 20, 500, [
+        "Ola ride", "Uber to office", "Metro card recharge", "Auto rickshaw",
+        "Petrol", "Rapido bike taxi",
+    ]),
+    "Bills": (14, 200, 3000, [
+        "Electricity bill", "Jio recharge", "Airtel broadband",
+        "Water bill", "Gas cylinder", "DTH recharge",
+    ]),
+    "Shopping": (14, 200, 5000, [
+        "Amazon order", "Flipkart sale", "Myntra clothes",
+        "Kitchen utensils", "D-Mart shopping",
+    ]),
+    "Other": (12, 50, 1000, [
+        "Haircut", "Laundry", "Temple donation", "Gift for friend",
+        "Stationery",
+    ]),
+    "Health": (6, 100, 2000, [
+        "Pharmacy", "Doctor consultation", "Apollo lab test",
+        "Gym membership", "Vitamins",
+    ]),
+    "Entertainment": (6, 100, 1500, [
+        "PVR movie tickets", "Netflix subscription", "Spotify premium",
+        "BookMyShow concert", "Gaming top-up",
+    ]),
+}
+
+
+def seed_dummy_expenses(user_id, count=50, months=6, today=None, rng=None):
+    """Insert `count` random expenses for `user_id` over the past `months`.
+
+    All rows go in one transaction; any failure rolls back every insert.
+    Returns the number of rows inserted.
+    """
+    today = today or date.today()
+    rng = rng or random.Random()
+    span_days = months * 30
+    categories = list(DUMMY_EXPENSE_PROFILE)
+    weights = [DUMMY_EXPENSE_PROFILE[c][0] for c in categories]
+
+    rows = []
+    for category in rng.choices(categories, weights=weights, k=count):
+        _, low, high, descriptions = DUMMY_EXPENSE_PROFILE[category]
+        rows.append((
+            user_id,
+            round(rng.uniform(low, high), 2),
+            category,
+            (today - timedelta(days=rng.randint(0, span_days))).isoformat(),
+            rng.choice(descriptions),
+        ))
+
+    conn = get_db()
+    try:
+        with conn:  # commits on success, rolls back on any exception
+            conn.executemany(
+                """
+                INSERT INTO expenses (user_id, amount, category, date, description)
+                VALUES (?, ?, ?, ?, ?)
+                """,
+                rows,
+            )
+        return len(rows)
     finally:
         conn.close()
 

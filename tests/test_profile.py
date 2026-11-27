@@ -107,10 +107,8 @@ def test_category_breakdown_highest_first(client):
 
 
 def test_empty_state_for_new_user(client):
-    client.post(
-        "/register",
-        data={"name": "New Person", "email": "new@example.com", "password": "password123"},
-    )
+    # create_user() directly: /register now seeds dummy expenses.
+    create_user("New Person", "new@example.com", "password123")
     login(client, "new@example.com", "password123")
     response = client.get("/profile")
     body = response.data.decode()
