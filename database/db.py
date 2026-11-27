@@ -89,7 +89,7 @@ def get_user_by_id(user_id):
         conn.close()
 
 
-def create_expense(user_id, amount, category, date, description=None):
+def create_expense(user_id, amount, category, expense_date, description=None):
     conn = get_db()
     try:
         cursor = conn.execute(
@@ -97,7 +97,7 @@ def create_expense(user_id, amount, category, date, description=None):
             INSERT INTO expenses (user_id, amount, category, date, description)
             VALUES (?, ?, ?, ?, ?)
             """,
-            (user_id, amount, category, date, description),
+            (user_id, amount, category, expense_date, description),
         )
         conn.commit()
         return cursor.lastrowid

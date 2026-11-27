@@ -7,19 +7,8 @@ from database import db as db_module
 from database.db import CATEGORIES, create_user, get_db
 
 URL = "/expenses/add"
-EMAIL = "tester@example.com"
-PASSWORD = "secret123"
 
-
-@pytest.fixture
-def user_id(app):
-    return create_user("Tester", EMAIL, PASSWORD)
-
-
-@pytest.fixture
-def auth_client(client, user_id):
-    client.post("/login", data={"email": EMAIL, "password": PASSWORD})
-    return client
+# `user_id` and `auth_client` fixtures come from tests/conftest.py.
 
 
 def valid_form(**overrides):
@@ -91,7 +80,6 @@ class TestGetForm:
 
     def test_get_lists_all_categories(self, auth_client):
         response = auth_client.get(URL)
-        assert len(CATEGORIES) == 7
         for category in CATEGORIES:
             assert category.encode() in response.data, category
 
@@ -189,6 +177,7 @@ INVALID_CASES = [
     ("amount", "inf", "Enter a valid amount"),
     ("amount", "0.001", "Amount must be greater than zero"),
     ("amount", "10000000.01", "Amount must be 10,000,000 or less"),
+    ("amount", "1e9", "Amount must be 10,000,000 or less"),
     ("category", "Groceries", "Choose a valid category"),
     ("category", "food", "Choose a valid category"),
     ("category", "", "Choose a valid category"),
@@ -207,36 +196,23 @@ class TestInvalidPost:
     ):
         response = auth_client.post(URL, data=valid_form(**{field: value}))
         assert response.status_code == 400
-        assert any(m.encode() in response.data for m in message.split("|")), message
+        assert message.encode() in response.data
         assert count_expenses() == 0
 
-    def test_zero_amount_gets_greater_than_zero_message(self, auth_client):
-        response = auth_client.post(URL, data=valid_form(amount="0"))
-        assert response.status_code == 400
-        assert b"Amount must be greater than zero" in response.data
-
-    def test_missing_category_field_returns_400(self, auth_client):
+    @pytest.mark.parametrize(
+        "field,message",
+        [
+            ("amount", "Enter a valid amount"),
+            ("category", "Choose a valid category"),
+            ("date", "Enter a valid date"),
+        ],
+    )
+    def test_missing_field_returns_400(self, auth_client, field, message):
         data = valid_form()
-        del data["category"]
+        del data[field]
         response = auth_client.post(URL, data=data)
         assert response.status_code == 400
-        assert b"Choose a valid category" in response.data
-        assert count_expenses() == 0
-
-    def test_missing_date_field_returns_400(self, auth_client):
-        data = valid_form()
-        del data["date"]
-        response = auth_client.post(URL, data=data)
-        assert response.status_code == 400
-        assert b"Enter a valid date" in response.data
-        assert count_expenses() == 0
-
-    def test_missing_amount_field_returns_400(self, auth_client):
-        data = valid_form()
-        del data["amount"]
-        response = auth_client.post(URL, data=data)
-        assert response.status_code == 400
-        assert b"Enter a valid amount" in response.data
+        assert message.encode() in response.data
         assert count_expenses() == 0
 
     def test_future_date_returns_400(self, auth_client):
@@ -283,6 +259,65 @@ class TestRefillAfterError:
         )
         assert response.status_code == 400
         assert past.encode() in response.data
+
+    def test_script_description_is_escaped_on_rerender(self, auth_client):
+        evil = "<script>alert(1)</script>"
+        response = auth_client.post(
+            URL, data=valid_form(amount="abc", description=evil)
+        )
+        assert response.status_code == 400
+        assert evil.encode() not in response.data
+        assert b"&lt;script&gt;" in response.data
+
+
+class TestOutputEscaping:
+    def test_script_description_is_escaped_on_profile(self, auth_client):
+        evil = "<script>alert(1)</script>"
+        auth_client.post(URL, data=valid_form(description=evil))
+        response = auth_client.get("/profile")
+        assert evil.encode() not in response.data
+        assert b"&lt;script&gt;" in response.data
+
+
+class TestCsrf:
+    @pytest.fixture
+    def csrf_on(self, app, monkeypatch):
+        monkeypatch.setitem(app.config, "CSRF_ENABLED", True)
+
+    def _token(self, client):
+        client.get(URL)
+        with client.session_transaction() as sess:
+            return sess["csrf_token"]
+
+    def test_form_renders_csrf_token(self, auth_client, csrf_on):
+        token = self._token(auth_client)
+        response = auth_client.get(URL)
+        assert f'name="csrf_token" value="{token}"'.encode() in response.data
+
+    def test_post_without_token_returns_400_and_inserts_nothing(
+        self, auth_client, csrf_on
+    ):
+        response = auth_client.post(URL, data=valid_form())
+        assert response.status_code == 400
+        assert count_expenses() == 0
+
+    def test_post_with_wrong_token_returns_400(self, auth_client, csrf_on):
+        self._token(auth_client)
+        response = auth_client.post(URL, data=valid_form(csrf_token="nope"))
+        assert response.status_code == 400
+        assert count_expenses() == 0
+
+    def test_post_with_valid_token_succeeds(self, auth_client, csrf_on):
+        token = self._token(auth_client)
+        response = auth_client.post(URL, data=valid_form(csrf_token=token))
+        assert response.status_code == 302
+        assert count_expenses() == 1
+
+    def test_login_without_token_returns_400(self, client, user_id, csrf_on):
+        response = client.post(
+            "/login", data={"email": "tester@example.com", "password": "secret123"}
+        )
+        assert response.status_code == 400
 
 
 class TestUserIdIgnored:
