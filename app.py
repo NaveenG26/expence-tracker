@@ -28,6 +28,7 @@ from database.db import (
     get_user_by_id,
     init_db,
     seed_db,
+    seed_dummy_expenses,
 )
 
 app = Flask(__name__)
@@ -224,9 +225,11 @@ def register():
 
     if not error:
         try:
-            create_user(name, email, password)
+            user_id = create_user(name, email, password)
         except sqlite3.IntegrityError:
             error = "An account with that email already exists"
+        else:
+            seed_dummy_expenses(user_id)
 
     if error:
         return (

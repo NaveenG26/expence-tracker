@@ -94,7 +94,7 @@ pytest -s
 | Route | Status |
 |---|---|
 | `GET /` | Implemented — renders `landing.html` |
-| `GET/POST /register` | Implemented — renders `register.html`, creates the user, redirects to `/login` |
+| `GET/POST /register` | Implemented — renders `register.html`, creates the user, seeds ~50 dummy expenses over the past 6 months via `seed_dummy_expenses()`, redirects to `/login` |
 | `GET/POST /login` | Implemented — renders `login.html`, authenticates and sets session |
 | `GET /logout` | Implemented — clears session, redirects to `/` |
 | `GET /profile` | Implemented — renders `profile.html` (login required): account info, stats, category breakdown, recent expenses. Optional `date_from` / `date_to` query params (`YYYY-MM-DD`, both required, inclusive) filter all sections |
@@ -113,7 +113,7 @@ pytest -s
 - **Never put DB logic in route functions** — it belongs in `database/db.py`
 - **Never install new packages** mid-feature without flagging it — keep `requirements.txt` in sync
 - **Never use JS frameworks** — the frontend is intentionally vanilla
-- **Reuse existing DB helpers** — `create_user`, `get_user_by_email`, `get_user_by_id`, `get_expense_summary`, `get_category_totals`, `get_category_breakdown`, `get_recent_expenses`, `create_expense` already exist in `database/db.py`; don't write duplicate queries. Expense form validation lives in `validate_expense_form()` in `app.py` — reuse it for edit (Step 8). The expense helpers accept optional `date_from` / `date_to` kwargs — extend them rather than adding `*_filtered` copies
+- **Reuse existing DB helpers** — `create_user`, `get_user_by_email`, `get_user_by_id`, `get_expense_summary`, `get_category_totals`, `get_category_breakdown`, `get_recent_expenses`, `create_expense`, `seed_dummy_expenses` already exist in `database/db.py`; don't write duplicate queries. Expense form validation lives in `validate_expense_form()` in `app.py` — reuse it for edit (Step 8). The expense helpers accept optional `date_from` / `date_to` kwargs — extend them rather than adding `*_filtered` copies
 - **Login-required routes** start with `user = get_current_user()` (in `app.py`) and redirect to `login` when it returns `None` — don't re-inline the session/stale-user check
 - **CSRF**: every `<form method="POST">` must include `<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">`; a `before_request` hook rejects POSTs without a valid token (`abort(400)`). Tests run with `CSRF_ENABLED = False` (see `tests/conftest.py`), and the shared `user_id` / `auth_client` fixtures live there too
 - **FK enforcement is manual** — SQLite foreign keys are off by default; `get_db()` must run `PRAGMA foreign_keys = ON` on every connection
