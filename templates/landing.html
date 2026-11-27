@@ -17,8 +17,12 @@
             one transaction at a time.
         </p>
         <div class="hero-actions">
+            {% if session.get('user_id') %}
+            <a href="{{ url_for('profile') }}" class="btn-primary">Go to your profile</a>
+            {% else %}
             <a href="{{ url_for('register') }}" class="btn-primary">Start tracking free</a>
             <a href="{{ url_for('login') }}" class="btn-ghost">Log in</a>
+            {% endif %}
         </div>
     </div>
     <div class="hero-visual">
@@ -81,6 +85,7 @@
     </div>
 </section>
 
+{% if not session.get('user_id') %}
 <section class="cta-section">
     <div class="cta-inner">
         <h2 class="cta-title">Ready to take control?</h2>
@@ -88,5 +93,6 @@
         <a href="{{ url_for('register') }}" class="btn-primary">Create free account</a>
     </div>
 </section>
+{% endif %}
 
 {% endblock %}
