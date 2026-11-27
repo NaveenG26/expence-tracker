@@ -13,7 +13,7 @@ from database.db import (
     seed_db,
 )
 
-DEMO = {"email": "demo@spendly.com", "password": "demo123"}
+DEMO = {"email": "demo@brokeaf.com", "password": "demo123"}
 
 
 # ------------------------------------------------------------------ #
@@ -75,7 +75,7 @@ def test_demo_profile_renders_real_data(client):
 
     assert response.status_code == 200
     assert b"Demo User" in body
-    assert b"demo@spendly.com" in body
+    assert b"demo@brokeaf.com" in body
     assert b"Member since" in body
     assert "₹283.45".encode() in body
     assert b"Bills" in body

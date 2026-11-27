@@ -249,7 +249,7 @@ class TestProfileRoute:
 
     def test_no_params_shows_seed_data_unfiltered(self, client):
         seed_db()
-        client.post("/login", data={"email": "demo@spendly.com", "password": "demo123"})
+        client.post("/login", data={"email": "demo@brokeaf.com", "password": "demo123"})
         response = client.get("/profile")
         assert response.status_code == 200
         assert "₹283.45".encode() in response.data
